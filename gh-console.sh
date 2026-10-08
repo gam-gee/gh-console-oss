@@ -48,8 +48,12 @@ ensure_auth() {
 pick_repo() {
   echo ""
   echo "  Fetching your repositories…"
-  local repos
-  mapfile -t repos < <(gh repo list --limit 100 --json nameWithOwner --jq '.[].nameWithOwner')
+  local repos line
+  repos=()
+  # NB: no `mapfile` here — macOS ships bash 3.2, which doesn't have it.
+  while IFS= read -r line; do
+    repos+=("$line")
+  done < <(gh repo list --limit 100 --json nameWithOwner --jq '.[].nameWithOwner')
   if [ "${#repos[@]}" -eq 0 ]; then
     echo "  No repositories found on your account."
     exit 1
@@ -251,8 +255,11 @@ act_deploy() {
   ensure_cloned
   local dir script
   dir="$(repo_dir)"
-  local scripts
-  mapfile -t scripts < <(ls "${dir}"/deploy-*.sh 2>/dev/null || true)
+  local scripts line
+  scripts=()
+  while IFS= read -r line; do
+    scripts+=("$line")
+  done < <(ls "${dir}"/deploy-*.sh 2>/dev/null || true)
   if [ "${#scripts[@]}" -eq 0 ]; then
     echo ""
     echo "  No deploy-*.sh script in ${REPO} — nothing to deploy."
